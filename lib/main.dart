@@ -26,31 +26,100 @@ class CatalogScreen extends StatefulWidget {
 
 class _CatalogScreenState extends State<CatalogScreen> {
   final ProductService _productService = ProductService();
-  late Future<List<Product>> _futureProducts;
+  final List<Product> _products = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoading = false;
+  bool _hasMore = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _futureProducts = _productService.fetchProducts();
+    _scrollController.addListener(_onScroll);
+    _loadProducts();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Product Catalog')),
-      body: FutureBuilder<List<Product>>(
-        future: _futureProducts,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No products found.'));
-          }
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
-          final products = snapshot.data!;
-          return GridView.builder(
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    if (_scrollController.position.extentAfter < 300) {
+      _loadProducts();
+    }
+  }
+
+  Future<void> _loadProducts() async {
+    if (_isLoading || !_hasMore) {
+      return;
+    }
+    //ambil data akan tambah di sini
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null; // Reset error message before fetching new data
+    });
+
+    try {
+      //fetch data and manage success result
+      final newProducts = await _productService.fetchProducts(
+        skip: _products.length,
+      );
+      if (!mounted) return; // Check if the widget is still mounted
+      setState(() {
+        _products.addAll(newProducts);
+        _hasMore = newProducts.length == 20; // Assuming if the API returns less than 20 products, there are no more products to load
+      });
+    } catch (error) {
+      //manage error result
+      if (!mounted) return; // Check if the widget is still mounted
+      setState(() {
+        _errorMessage = 'Failed to load products. Please try again.';
+      });
+    } finally {
+      //end loading state
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildBody() {
+    //logic to choose what to display based on the state of the app
+    if (_isLoading && _products.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    } else if (_errorMessage != null && _products.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Failed to load products. Please try again.'),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                // Retry fetching products
+                _loadProducts();
+              },
+              child: Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    } else if (_products.isEmpty) {
+      return const Center(child: Text('No products found.'));
+    }
+
+    final products = _products;
+    return Column(
+      children: [
+        Expanded(
+          child: GridView.builder(
+            controller: _scrollController,
             padding: const EdgeInsets.all(8.0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -94,9 +163,38 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 ),
               );
             },
-          );
-        },
-      ),
+          ),
+        ),
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: CircularProgressIndicator(),
+          ),
+        
+        if (_errorMessage != null && !_isLoading)
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_errorMessage!),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () {
+                // Retry fetching products
+                _loadProducts();
+              },
+              child: Text('Retry'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Product Catalog')),
+      body: _buildBody(),
     );
   }
 }
