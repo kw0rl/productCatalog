@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:productcatalog/product_model/product.dart';
 import 'package:productcatalog/services/product_service.dart';
+import 'package:productcatalog/screens/product_detail_screen.dart';
+
+import 'dart:async';
 
 void main() => runApp(const ProductCatalogApp());
 
@@ -10,6 +13,7 @@ class ProductCatalogApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Product Catalog',
       theme: ThemeData(primarySwatch: Colors.blueGrey),
       home: const CatalogScreen(),
@@ -31,6 +35,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
   bool _isLoading = false;
   bool _hasMore = true;
   String? _errorMessage;
+  Timer? _debounce;
+  String _searchQuery = '';
+  int _searchVersion = 0; // Track the version of the search query
 
   @override
   void initState() {
@@ -41,8 +48,28 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      final query = value.trim();
+
+      if (!mounted || query == _searchQuery) return;
+      setState(() {
+        _searchQuery = query;
+        _searchVersion++; // Increment the search version
+        _products.clear();
+        _hasMore = true;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+      _loadProducts();
+    });
   }
 
   void _onScroll() {
@@ -54,6 +81,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Future<void> _loadProducts() async {
+    final requestVersion = _searchVersion; // Capture the current search version
     if (_isLoading || !_hasMore) {
       return;
     }
@@ -67,21 +95,22 @@ class _CatalogScreenState extends State<CatalogScreen> {
       //fetch data and manage success result
       final newProducts = await _productService.fetchProducts(
         skip: _products.length,
+        query: _searchQuery,
       );
-      if (!mounted) return; // Check if the widget is still mounted
+      if (!mounted || requestVersion != _searchVersion) return;
       setState(() {
         _products.addAll(newProducts);
         _hasMore = newProducts.length == 20; // Assuming if the API returns less than 20 products, there are no more products to load
       });
     } catch (error) {
       //manage error result
-      if (!mounted) return; // Check if the widget is still mounted
+      if (!mounted || requestVersion != _searchVersion) return;
       setState(() {
         _errorMessage = 'Failed to load products. Please try again.';
       });
     } finally {
       //end loading state
-      if (mounted) {
+      if (mounted && requestVersion == _searchVersion) {
         setState(() {
           _isLoading = false;
         });
@@ -132,34 +161,44 @@ class _CatalogScreenState extends State<CatalogScreen> {
               final product = products[index];
               return Card(
                 elevation: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Image.network(
-                        product.thumbnail,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProductDetailScreen(productId: product.id),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        product.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    );
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Image.network(
+                          product.thumbnail,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(
-                        '\$${product.price.toStringAsFixed(2)}',
-                        style: const TextStyle(color: Colors.green),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          product.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          '\$${product.price.toStringAsFixed(2)}',
+                          style: const TextStyle(color: Colors.green),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
               );
             },
@@ -170,22 +209,22 @@ class _CatalogScreenState extends State<CatalogScreen> {
             padding: EdgeInsets.all(16),
             child: CircularProgressIndicator(),
           ),
-        
+
         if (_errorMessage != null && !_isLoading)
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_errorMessage!),
-            SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () {
-                // Retry fetching products
-                _loadProducts();
-              },
-              child: Text('Retry'),
-            ),
-          ],
-        ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_errorMessage!),
+              SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () {
+                  // Retry fetching products
+                  _loadProducts();
+                },
+                child: Text('Retry'),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -194,7 +233,24 @@ class _CatalogScreenState extends State<CatalogScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Product Catalog')),
-      body: _buildBody(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: TextField(
+              onChanged: _onSearchChanged,
+              decoration: const InputDecoration(
+                hintText: 'Search products...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _buildBody(),
+          ),
+        ],
+      ),
     );
   }
 }
