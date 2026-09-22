@@ -2,7 +2,7 @@
 
 A Flutter product catalog app built for the Neurogine mobile developer assessment. The app retrieves product data from DummyJSON and displays it in a two-column grid.
 
-**Status:** The required product list, pagination, product details, request states, and debounced search are implemented. Optional improvements and validation notes are listed below.
+**Status:** The required product list, pagination, product details, request states, and debounced search are implemented. The image loading placeholder and error handling bonus is also implemented. Remaining optional improvements and validation notes are listed below.
 
 ## Tech Stack
 
@@ -52,6 +52,7 @@ flutter analyze
 - Loading and error states with Retry on the detail screen
 - API-based search with a 400 ms debounce, paginated results, and an empty state
 - Clearing the search input restores the unfiltered catalog
+- Image loading spinners and broken-image icons for failed images on both catalog cards and the detail screen
 
 ## Code Organization
 
@@ -96,6 +97,12 @@ When a new query becomes active, the accumulated list is cleared and pagination 
 
 A search version counter prevents responses and errors from older searches from updating the current results or loading state. Existing network requests are not cancelled; their results are ignored once their version is no longer current. The timer and scroll controller are disposed when the catalog screen is removed.
 
+## Image Loading and Error Handling
+
+Both screens use `Image.network` with `loadingBuilder` to display a spinner while image data is loading and return the image widget when loading completes. An `errorBuilder` displays a broken-image icon if an image cannot be loaded, while the product text remains available.
+
+Catalog image placeholders use the space allocated by the card's `Expanded` widget. Detail images, loading placeholders, and error placeholders all use a height of 200 logical pixels to keep the content below them from shifting between these states.
+
 ## Validation
 
 Manual checks completed during development:
@@ -108,6 +115,8 @@ Manual checks completed during development:
 - The detail screen displays a centered error message and Retry button when the request fails.
 - Search returns matching results, and a query with no matches displays the empty state.
 - Search pagination, retry after restoring connectivity, clearing the query, and navigation from search results were manually checked.
+- Image error fallbacks were checked on the catalog and detail screens using temporary invalid image URLs. The original URLs were restored afterward.
+- The loading placeholder appearance was manually checked. To verify the full loading-to-image transition, use an uncached image on a slow connection; cached images or fast connections can make the spinner difficult to observe.
 
 Before submission, also verify end-of-list behavior and rapid scrolling, and run `flutter analyze`. Automated tests have not yet been added.
 
@@ -125,12 +134,12 @@ Before submission, also verify end-of-list behavior and rapid scrolling, and run
 ### Optional Improvements
 
 - [ ] Pull-to-refresh
-- [ ] Image loading placeholders and image error handling
+- [x] Image loading placeholders and image error handling
 - [ ] A unit test for data or business logic
 
 ## AI Assistance Disclosure
 
-ChatGPT/Codex was used to explain Dart and Flutter concepts, review code and errors, and compare progress against the assessment requirements. It provided step-by-step guidance and code examples for separating API access from UI code, retry handling, pagination state, scroll listeners, widget layout, detail navigation and fetching, API-based search, debounce timers, and handling outdated search responses. It also provided Git and emulator troubleshooting guidance.
+ChatGPT/Codex was used to explain Dart and Flutter concepts, review code and errors, and compare progress against the assessment requirements. It provided step-by-step guidance and code examples for separating API access from UI code, retry handling, pagination state, scroll listeners, widget layout, detail navigation and fetching, API-based search, debounce timers, handling outdated search responses, and image loading/error builders. It also provided guidance on manually checking image placeholders and failures, plus Git and emulator troubleshooting.
 
 Codex directly moved the existing `Product` model into `lib/product_model/product.dart`, removed the duplicate model definition from `main.dart`, and added the model import. It also completed the grid's `Column`/`Expanded` wrapper, added the conditional loading indicator below the grid, corrected the product card's `InkWell` nesting, and formatted `main.dart`. This README was drafted and updated by Codex after reviewing the source files.
 
