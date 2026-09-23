@@ -2,7 +2,7 @@
 
 A Flutter product catalog app built for the Neurogine mobile developer assessment. The app retrieves product data from DummyJSON and displays it in a two-column grid.
 
-**Status:** The required product list, pagination, product details, request states, and debounced search are implemented. Pull-to-refresh and image loading/error handling bonuses are also implemented. Automated unit tests remain a TODO.
+**Status:** The required product list, pagination, product details, request states, and debounced search are implemented. Pull-to-refresh, image loading/error handling, and a model unit test are also implemented.
 
 ## Tech Stack
 
@@ -66,6 +66,8 @@ lib/
     product_service.dart        HTTP request and response handling
   screens/
     product_detail_screen.dart  Product details, loading, and retry
+test/
+  product_test.dart             Unit test for product JSON parsing
 ```
 
 The code separates data responsibilities from the UI:
@@ -127,7 +129,21 @@ Manual checks completed during development:
 - Pull-to-refresh was manually checked on the product grid and empty results.
 - Pulling to refresh the initial error state successfully reloaded products after connectivity was restored.
 
-Before submission, also verify end-of-list behavior, rapid scrolling, and preservation of the active search and continued pagination after refresh, and run `flutter analyze`. Automated tests have not yet been added.
+Before submission, also verify end-of-list behavior, rapid scrolling, and preservation of the active search and continued pagination after refresh, and run `flutter analyze`.
+
+### Unit Test
+
+Run the model test from the project root:
+
+```sh
+flutter test test/product_test.dart
+```
+
+`test/product_test.dart` supplies sample data to `Product.fromJson` and checks that integer price and rating values become doubles with the expected values (`1000.0` and `4.0`). It also checks that the title is preserved as `Test Phone`.
+
+The test uses local sample data and makes no API or image requests. It does not require a phone or emulator. The development run completed with one test passing (`+1: All tests passed!`).
+
+Coverage is currently limited to this model conversion case. Decimal inputs, malformed data, API requests, and widget behavior are not covered by automated tests.
 
 ## Feature Checklist and Remaining Work
 
@@ -144,7 +160,7 @@ Before submission, also verify end-of-list behavior, rapid scrolling, and preser
 
 - [x] Pull-to-refresh
 - [x] Image loading placeholders and image error handling
-- [ ] A unit test for data or business logic
+- [x] A unit test for data or business logic
 
 ## AI Assistance Disclosure
 
@@ -153,5 +169,7 @@ ChatGPT/Codex was used to explain Dart and Flutter concepts, review code and err
 Codex directly moved the existing `Product` model into `lib/product_model/product.dart`, removed the duplicate model definition from `main.dart`, and added the model import. It also completed the grid's `Column`/`Expanded` wrapper, added the conditional loading indicator below the grid, corrected the product card's `InkWell` nesting, and formatted `main.dart`. This README was drafted and updated by Codex after reviewing the source files.
 
 For pull-to-refresh, Codex provided guidance and code examples for resetting pagination, preserving the active query, ignoring older responses, and making empty/error states scrollable. It directly corrected delimiters, indentation, and an invalid `const` on the Retry button in the initial error-state layout, and checked `main.dart` with the Dart analyzer.
+
+For the unit test, Codex explained the Arrange/Act/Assert structure, supplied a starter test skeleton and sample input data, and reviewed the completed test and its assertions. The test was run locally by the developer.
 
 This disclosure should be updated if further AI assistance is used during development.
