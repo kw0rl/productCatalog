@@ -15,7 +15,20 @@ class ProductCatalogApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Product Catalog',
-      theme: ThemeData(primarySwatch: Colors.grey),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0F766E),
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF6F7F9),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFF6F7F9),
+          foregroundColor: Color(0xFF111827),
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+      ),
       home: const CatalogScreen(),
     );
   }
@@ -181,18 +194,26 @@ class _CatalogScreenState extends State<CatalogScreen> {
           child: GridView.builder(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              childAspectRatio: 0.80,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];
               return Card(
-                elevation: 2,
+                color: Colors.white,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                ),
+                clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {
                     Navigator.of(context).push(
@@ -206,45 +227,60 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Image.network(
-                          product.thumbnail,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Center(
-                              child: Icon(
-                                Icons.broken_image_outlined,
-                                size: 40,
-                              ),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) {
-                              return child;
-                            }
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Image.network(
+                            product.thumbnail,
+                            fit: BoxFit.contain,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  size: 40,
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          product.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                        child: SizedBox(
+                          height: 38,
+                          child: Text(
+                            product.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF111827),
+                              height: 1.3,
+                            ),
+                          ),
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text(
                           '\$${product.price.toStringAsFixed(2)}',
-                          style: const TextStyle(color: Colors.green),
+                          style: const TextStyle(
+                            color: Color(0xD5307038),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
@@ -298,14 +334,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 hintStyle: TextStyle(color: Colors.grey.shade600),
                 prefixIcon: const Icon(Icons.search_rounded),
                 filled: true,
-                fillColor: const Color.fromARGB(47, 119, 116, 116),
+                fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
+                  borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
