@@ -74,29 +74,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         width: double.infinity,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
-                            return const SizedBox(
-                              height: 200,
-                              width: double.infinity,
-                              child: Center(
+                          return const SizedBox(
+                            height: 200,
+                            width: double.infinity,
+                            child: Center(
                               child: Icon(
                                 Icons.broken_image_outlined,
                                 size: 40,
                               ),
                             ),
-                            );
+                          );
                         },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) {
-                              return child;
-                            }
-                            return const SizedBox(
-                              height: 200,
-                              width: double.infinity,
-                              child: Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child;
+                          }
+                          return const SizedBox(
+                            height: 200,
+                            width: double.infinity,
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        },
                       ),
                     ),
                   Text(product.title),

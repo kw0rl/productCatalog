@@ -80,6 +80,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
     }
   }
 
+  Future<void> _refreshProducts() async {
+    setState(() {
+      _searchVersion++;
+      _products.clear();
+      _hasMore = true;
+      _isLoading = false;
+      _errorMessage = null;
+    });
+    await _loadProducts();
+  }
+
   Future<void> _loadProducts() async {
     final requestVersion = _searchVersion; // Capture the current search version
     if (_isLoading || !_hasMore) {
@@ -123,24 +134,44 @@ class _CatalogScreenState extends State<CatalogScreen> {
     if (_isLoading && _products.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     } else if (_errorMessage != null && _products.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Failed to load products. Please try again.'),
-            SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () {
-                // Retry fetching products
-                _loadProducts();
-              },
-              child: Text('Retry'),
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: constraints.maxHeight,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Failed to load products. Please try again.'),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Retry fetching products
+                        _loadProducts();
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          );
+        },
       );
     } else if (_products.isEmpty) {
-      return const Center(child: Text('No products found.'));
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: constraints.maxHeight,
+              child: const Center(child: Text('No products found.')),
+            ),
+          );
+        },
+      );
     }
 
     final products = _products;
@@ -149,6 +180,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
         Expanded(
           child: GridView.builder(
             controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(8.0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -262,7 +294,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
               ),
             ),
           ),
-          Expanded(child: _buildBody()),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshProducts,
+              child: _buildBody(),
+            ),
+          ),
         ],
       ),
     );

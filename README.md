@@ -2,7 +2,7 @@
 
 A Flutter product catalog app built for the Neurogine mobile developer assessment. The app retrieves product data from DummyJSON and displays it in a two-column grid.
 
-**Status:** The required product list, pagination, product details, request states, and debounced search are implemented. The image loading placeholder and error handling bonus is also implemented. Remaining optional improvements and validation notes are listed below.
+**Status:** The required product list, pagination, product details, request states, and debounced search are implemented. Pull-to-refresh and image loading/error handling bonuses are also implemented. Automated unit tests remain a TODO.
 
 ## Tech Stack
 
@@ -53,6 +53,7 @@ flutter analyze
 - API-based search with a 400 ms debounce, paginated results, and an empty state
 - Clearing the search input restores the unfiltered catalog
 - Image loading spinners and broken-image icons for failed images on both catalog cards and the detail screen
+- Pull-to-refresh for the catalog and active search, including short lists, empty results, and the initial error state
 
 ## Code Organization
 
@@ -97,6 +98,12 @@ When a new query becomes active, the accumulated list is cleared and pagination 
 
 A search version counter prevents responses and errors from older searches from updating the current results or loading state. Existing network requests are not cancelled; their results are ignored once their version is no longer current. The timer and scroll controller are disposed when the catalog screen is removed.
 
+## Pull-to-Refresh
+
+A `RefreshIndicator` wraps the catalog's result area while the search field remains outside it. Pulling down reloads the first page using the active search query. Refresh clears the accumulated products and error state, resets pagination, increments the request version to ignore older responses, and awaits the new request. Existing products are replaced by the loading state during refresh; if the request fails, the error state offers Retry and another pull-to-refresh attempt.
+
+The grid uses `AlwaysScrollableScrollPhysics` so short lists can still be pulled. Empty and initial error states use a scrollable, viewport-height layout to support the same gesture while keeping their messages centered. Refresh does not clear the active search query.
+
 ## Image Loading and Error Handling
 
 Both screens use `Image.network` with `loadingBuilder` to display a spinner while image data is loading and return the image widget when loading completes. An `errorBuilder` displays a broken-image icon if an image cannot be loaded, while the product text remains available.
@@ -117,8 +124,10 @@ Manual checks completed during development:
 - Search pagination, retry after restoring connectivity, clearing the query, and navigation from search results were manually checked.
 - Image error fallbacks were checked on the catalog and detail screens using temporary invalid image URLs. The original URLs were restored afterward.
 - The loading placeholder appearance was manually checked. To verify the full loading-to-image transition, use an uncached image on a slow connection; cached images or fast connections can make the spinner difficult to observe.
+- Pull-to-refresh was manually checked on the product grid and empty results.
+- Pulling to refresh the initial error state successfully reloaded products after connectivity was restored.
 
-Before submission, also verify end-of-list behavior and rapid scrolling, and run `flutter analyze`. Automated tests have not yet been added.
+Before submission, also verify end-of-list behavior, rapid scrolling, and preservation of the active search and continued pagination after refresh, and run `flutter analyze`. Automated tests have not yet been added.
 
 ## Feature Checklist and Remaining Work
 
@@ -133,7 +142,7 @@ Before submission, also verify end-of-list behavior and rapid scrolling, and run
 
 ### Optional Improvements
 
-- [ ] Pull-to-refresh
+- [x] Pull-to-refresh
 - [x] Image loading placeholders and image error handling
 - [ ] A unit test for data or business logic
 
@@ -142,5 +151,7 @@ Before submission, also verify end-of-list behavior and rapid scrolling, and run
 ChatGPT/Codex was used to explain Dart and Flutter concepts, review code and errors, and compare progress against the assessment requirements. It provided step-by-step guidance and code examples for separating API access from UI code, retry handling, pagination state, scroll listeners, widget layout, detail navigation and fetching, API-based search, debounce timers, handling outdated search responses, and image loading/error builders. It also provided guidance on manually checking image placeholders and failures, plus Git and emulator troubleshooting.
 
 Codex directly moved the existing `Product` model into `lib/product_model/product.dart`, removed the duplicate model definition from `main.dart`, and added the model import. It also completed the grid's `Column`/`Expanded` wrapper, added the conditional loading indicator below the grid, corrected the product card's `InkWell` nesting, and formatted `main.dart`. This README was drafted and updated by Codex after reviewing the source files.
+
+For pull-to-refresh, Codex provided guidance and code examples for resetting pagination, preserving the active query, ignoring older responses, and making empty/error states scrollable. It directly corrected delimiters, indentation, and an invalid `const` on the Retry button in the initial error-state layout, and checked `main.dart` with the Dart analyzer.
 
 This disclosure should be updated if further AI assistance is used during development.

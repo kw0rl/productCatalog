@@ -20,7 +20,7 @@ class ProductService {
         if (searchQuery.isNotEmpty) 'q': searchQuery,
       },
     );
-    
+
     final response = await http.get(uri);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
