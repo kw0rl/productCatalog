@@ -48,7 +48,7 @@ flutter analyze
 - Loading indicator below the grid while the next page is being fetched
 - Error message and Retry button for failed additional-page requests, while keeping existing products visible
 - Guards against overlapping page requests for the active search and further requests after the final page is detected
-- Tap a product to open its detail screen with title, description, price, rating, and all product images arranged vertically
+- Tap a product to open its detail screen with title, description, price, rating, and a horizontally swipeable image gallery with animated page indicators
 - Loading and error states with Retry on the detail screen
 - API-based search with a 400 ms debounce, paginated results, and an empty state
 - Clearing the search input restores the unfiltered catalog
@@ -110,7 +110,7 @@ The grid uses `AlwaysScrollableScrollPhysics` so short lists can still be pulled
 
 Both screens use `Image.network` with `loadingBuilder` to display a spinner while image data is loading and return the image widget when loading completes. An `errorBuilder` displays a broken-image icon if an image cannot be loaded, while the product text remains available.
 
-Catalog image placeholders use the space allocated by the card's `Expanded` widget. Detail images, loading placeholders, and error placeholders all use a height of 200 logical pixels to keep the content below them from shifting between these states.
+Catalog image placeholders use the space allocated by the card's `Expanded` widget. The detail gallery has a fixed height of 260 logical pixels, keeping the content below it stable while images load or display an error placeholder.
 
 ## Validation
 
