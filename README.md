@@ -171,5 +171,3 @@ Codex directly moved the existing `Product` model into `lib/product_model/produc
 For pull-to-refresh, Codex provided guidance and code examples for resetting pagination, preserving the active query, ignoring older responses, and making empty/error states scrollable. It directly corrected delimiters, indentation, and an invalid `const` on the Retry button in the initial error-state layout, and checked `main.dart` with the Dart analyzer.
 
 For the unit test, Codex explained the Arrange/Act/Assert structure, supplied a starter test skeleton and sample input data, and reviewed the completed test and its assertions. The test was run locally by the developer.
-
-This disclosure should be updated if further AI assistance is used during development.
